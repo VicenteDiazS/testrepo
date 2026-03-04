@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TDS-PAK Cart Delivery</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS (REQUIRED FOR MAP TO SHOW) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <link rel="icon" href="favicon.ico" />
+
+  
+
+  
+</head>
+
+<body>
+
+
+<header>
+
+ <div class="header-top">
+
+  <button id="downloadFullExcelBtn" class="download-btn" title="Download Full Excel">
+    ⬇
+  </button>
+
+  <div class="title-with-tools">
+    <h1>TDS-PAK Cart Del.</h1>
+    <div class="header-tools header-tools-desktop">
+      <button id="toolsMenuBtn" class="tools-menu-btn" aria-expanded="false" aria-haspopup="true">
+        Other Apps
+      </button>
+      <div id="toolsMenuDropdown" class="tools-menu-dropdown">
+        <div id="toolsMenuList" class="tools-menu-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <label class="theme-toggle">
+    <input type="checkbox" id="sunModeToggle">
+    <span class="theme-toggle-track" aria-hidden="true">
+      <span class="theme-toggle-thumb"></span>
+    </span>
+    <span id="sunToggleText">Dark Mode</span>
+  </label>
+
+</div>
+
+
+
+  <p>Periodically export a backend Excel backup (top-left download button)</p>
+
+  <div class="mobile-header-buttons">
+    <button id="hardRefreshBtn" class="primary-btn" title="Reload app data and clear cached view">Refresh App</button>
+    <button id="mobileMenuBtn">☰ Menu</button>
+    <button id="locateMeBtn" class="primary-btn">📍</button>
+    <button id="completeStopsBtnMobile" class="primary-btn">✔</button>
+  </div>
+
+</header>
+
+
+  
+  <!-- MOBILE DARK OVERLAY -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+<div class="app-container">
+  
+<button id="toggleSidebarBtn" class="sidebar-toggle" aria-label="Toggle left sidebar"></button>
+  <aside class="sidebar">
+
+    <div id="dropZone" aria-label="Upload Excel file">
+      <div class="dropzone-title">Upload Route File</div>
+      <div class="dropzone-subtitle">Drop .xlsx, .xls, or .csv here</div>
+      <div class="dropzone-browse">Click to choose file</div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+    <div id="currentFileDisplay" class="current-file-display">
+      <span class="current-file-label">Current file</span>
+      <span id="currentFileName" class="current-file-name">None</span>
+    </div>
+    <!-- NEW: Saved files -->
+    <div class="filter-group">
+  <button id="openFileManagerBtn" class="primary-btn file-manager-btn" aria-label="Open saved files">
+  <span class="file-manager-icon" aria-hidden="true"></span>
+  <span class="file-manager-copy">
+    <span class="file-manager-title">Open Saved Files</span>
+    <span class="file-manager-subtitle">Load a saved route into the map + route summary</span>
+  </span>
+</button>
+</div>
+    <div id="savedFilesGuide" class="saved-files-guide">
+      <div class="saved-files-guide-title">Quick Start</div>
+      <div class="saved-files-guide-step"><span class="saved-files-guide-num">1</span>Open <strong>Saved Files</strong></div>
+      <div class="saved-files-guide-step"><span class="saved-files-guide-num">2</span><strong>Open Map</strong> or <strong>Summary</strong></div>
+    </div>
+    <div class="map-view-group">
+      <label for="baseMapSelect" class="map-view-label">Map View</label>
+      <select id="baseMapSelect" aria-label="Map View">
+        <option value="streets">Streets (Detailed)</option>
+        <option value="satellite">Satellite (Imagery)</option>
+      </select>
+    </div>
+
+
+    
+    
+<div class="filter-group">
+  <strong>Delivered</strong>
+  <div id="deliveredControls"></div>
+</div>
+
+<div class="filter-group">
+  <div class="filter-header collapsible-header" id="routeDayToggle">
+    <div class="routes-title">
+      <span class="arrow">▶</span>
+      <strong>Route + Day Layers</strong>
+    </div>
+    <div class="routes-buttons">
+      <button class="mini-btn" id="routeDayAll">All</button>
+      <button class="mini-btn" id="routeDayNone">None</button>
+    </div>
+  </div>
+
+  <div id="routeDayContent" class="collapsible-content collapsed">
+    <div id="routeDayLayers"></div>
+  </div>
+</div>
+
+    
+<div class="map-search-container">
+  <input 
+    type="text" 
+    id="mapSearchInput" 
+    placeholder="Search by address or number"
+  />
+  <button id="mapSearchBtn">Search</button>
+</div>
+<div id="searchResultsPanel" class="search-results hidden">
+  <div class="search-results-header">
+    Search Results
+    <button id="clearSearchResults">Clear</button>
+  </div>
+  <div id="searchResultsList"></div>
+</div>
+    
+  <div class="filter-group">
+
+  <div class="filter-header collapsible-header" id="routesToggle">
+    <div class="routes-title">
+      <span class="arrow">▶</span>
+      <strong>Routes</strong>
+    </div>
+
+    <div class="routes-buttons">
+      <button class="mini-btn" id="routesAll">All</button>
+      <button class="mini-btn" id="routesNone">None</button>
+    </div>
+  </div>
+
+  <div id="routesContent" class="collapsible-content collapsed">
+    <div id="routeCheckboxes"></div>
+  </div>
+
+</div>
+
+
+
+    
+    <div class="filter-group">
+      
+       <div class="filter-header collapsible-header" id="daysToggle">
+    <div class="days-title">
+      <span class="arrow">▶</span>
+      <strong>Days</strong>
+    </div>
+
+    <div class="days-buttons">
+      <button class="mini-btn" id="daysAll">All</button>
+      <button class="mini-btn" id="daysNone">None</button>
+    </div>
+  </div>
+
+  <div id="daysContent" class="collapsible-content collapsed">
+    <div id="dayCheckboxes"></div>
+  </div>
+      
+    </div>
+
+
+    
+
+
+
+
+
+
+    
+    <div class="filter-group">
+      <div class="filter-header collapsible-header" id="statsToggle">
+        <div class="routes-title">
+          <span class="arrow">▶</span>
+          <strong>Statistics</strong>
+        </div>
+      </div>
+      <div id="statsContent" class="collapsible-content collapsed">
+        <ul id="statsList"></ul>
+      </div>
+    </div>
+   
+
+
+    <button id="resetMapBtn" class="primary-btn" aria-label="Reset map and clear selections">
+      <span class="reset-map-icon" aria-hidden="true"></span>
+      <span class="reset-map-copy">
+        <span class="reset-map-title">Reset Map</span>
+        <span class="reset-map-subtitle">Clear markers, filters, and selection</span>
+      </span>
+    </button>
+    <div class="mobile-sidebar-tools">
+      <button id="toolsMenuBtnMobile" class="tools-menu-btn mobile-tools-btn" aria-expanded="false" aria-haspopup="true">
+        Other Apps
+      </button>
+      <div id="toolsMenuDropdownMobile" class="tools-menu-dropdown mobile-tools-dropdown">
+        <div id="toolsMenuListMobile" class="tools-menu-list"></div>
+      </div>
+    </div>
+    <div class="sidebar-scroll-spacer" aria-hidden="true"></div>
+    <div class="sidebar-scroll-spacer" aria-hidden="true"></div>
+
+
+
+
+
+    
+  </aside>
+
+   <main class="map-container">
+    <div id="map"></div>
+  </main>
+
+  
+<!-- RIGHT SIDEBAR -->
+<div id="selectionBox">
+
+
+  <strong>Selected Stops:</strong>
+  <span id="selectionCount">0</span>
+
+  <button id="clearSelectionBtn" class="primary-btn">
+    Clear Selection
+  </button>
+  
+  <div id="desktopLocateContainer"></div>
+  
+  <button id="completeStopsBtn" class="primary-btn">
+  Complete Stops
+</button>
+
+<label class="street-toggle-label">
+  <input type="checkbox" id="streetLabelToggle">
+  Street Labels
+</label>
+
+  
+   <button id="undoDeliveredBtn" class="primary-btn undo-btn">
+  Undo Delivered
+</button>
+
+
+
+  
+</div>
+
+
+
+
+
+<button id="toggleSelectionBtn" class="sidebar-toggle-right">❯</button>
+
+</div> <!-- end app-container -->
+<!-- ===== BOTTOM ROUTE SUMMARY PANEL ===== -->
+<div id="bottomSummary" class="bottom-summary">
+
+  <div class="bottom-summary-header">
+  <div class="resize-hint">
+    ⠿ Drag up to resize
+  </div>
+
+
+    <button id="popoutSummaryBtn" class="primary-btn">
+  ↗ Open Summary
+</button>
+
+    <button id="visualizeSummaryBtn" class="primary-btn">Visualize Summary</button>
+
+
+    <span class="summary-title">Route Summary</span>
+
+    <button id="summaryToggleBtn" class="primary-btn collapse-btn">▲</button>
+
+
+  </div>
+
+  <div id="routeSummaryTable" class="bottom-summary-content">
+    No summary loaded
+  </div>
+
+</div>
+
+
+
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
+<script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/leaflet-pip@1.1.0/leaflet-pip.min.js"></script>
+  <!-- FILE MANAGER MODAL -->
+<div id="fileManagerModal" class="modal">
+  <div class="modal-content">
+    <h3>Saved Excel Files (Open Here)</h3>
+    <p class="saved-files-modal-help">Choose <strong>Open Map</strong> to load the map and route summary, or <strong>Summary</strong> for summary only.</p>
+
+    <div id="savedFiles" class="file-list"></div>
+
+    <div class="modal-actions">
+      <button id="closeFileManager">Close</button>
+    </div>
+  </div>
+</div>
+<div id="downloadConfirmModal" class="modal">
+  <div class="modal-content">
+    <h3>Download Excel File</h3>
+    <p>Are you sure you want to download the full Excel file?</p>
+    <div class="modal-actions">
+      <button id="cancelDownload">Cancel</button>
+      <button id="confirmDownload">Download</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+<!-- MOBILE Selected Stops Button -->
+<button id="mobileSelectionBtn">Selected: 0</button>
+
+<!-- ===== FILE LOADING OVERLAY ===== -->
+<div id="loadingOverlay" class="hidden">
+  <div class="loading-card">
+    <div class="spinner"></div>
+   <div class="loading-text">Loading file...</div>
+  </div>
+</div>
+</body>
+</html>
